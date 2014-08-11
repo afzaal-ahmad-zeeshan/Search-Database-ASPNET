@@ -1,0 +1,90 @@
+﻿@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Home Page";
+}
+
+@{
+    bool executed = false;
+    List<int> titleResultStrings = new List<int>();
+    List<int> contentResultStrings = new List<int>();
+
+    if (IsPost)
+    {
+        // request was made, get the input and search the database.
+        var query = Request.Form["input"];
+        var db = Database.Open("StarterSite");
+
+        // select the Query
+        var selectTitleQuery = "SELECT * FROM Content WHERE PostTitle LIKE '%" + query + "%'";
+        var selectContentQuery = "SELECT * FROM Content WHERE PostContent LIKE '%" + query + "%'";
+        var titleResult = db.Query(selectTitleQuery);
+        var contentResult = db.Query(selectContentQuery);
+
+        // append the post id to the list
+        foreach (var row in titleResult)
+        {
+            titleResultStrings.Add(row.PostId);
+        }
+
+        foreach (var row in contentResult)
+        {
+            contentResultStrings.Add(row.PostId);
+        }
+
+        // got the content, now do the C# on it!
+        executed = true;
+    }
+}
+
+<form method="post">
+    Write the input and get the result!<br />
+    <input type="text" name="input" /><br />
+    <input type="submit" value="Submit" />
+</form>
+
+@if (executed)
+{
+    <p>Code has been executed!</p>
+    // if the code was executed show the result.
+    if (titleResultStrings.Count() != 0)
+    {
+        var db2 = Database.Open("StarterSite");
+        <h4>Posts whose title have this character are</h4>
+        int i = 0;
+        foreach (var item in titleResultStrings)
+        {
+            // get the data for each item!
+            var post = db2.Query("SELECT * FROM Content WHERE PostId = @0", titleResultStrings[i]);
+            i++;
+            foreach (var row in post)
+            {
+                <p>@row.PostTitle</p>
+            }
+        }
+    }
+    else
+    {
+        <p>No post for query "<b>@Request.Form["input"]</b>" was found!</p>
+    }
+
+    if (contentResultStrings.Count() != 0)
+    {
+        var db2 = Database.Open("StarterSite");
+        <h4>Posts whose content have this character are</h4>
+        int i = 0;
+        foreach (var item in contentResultStrings)
+        {
+            // get the data for each item!
+            var post = db2.Query("SELECT * FROM Content WHERE PostId = @0", contentResultStrings[i]);
+            i++;
+            foreach (var row in post)
+            {
+                <p>@row.PostContent</p>
+            }
+        }
+    }
+    else
+    {
+        <p>No post for query "<b>@Request.Form["input"]</b>" content was found!</p>
+    }
+}
